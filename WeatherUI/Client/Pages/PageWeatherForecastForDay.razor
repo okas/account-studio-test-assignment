@@ -1,4 +1,4 @@
-﻿@page "/fetchdata/{date:datetime}"
+﻿@page "/weatherforecast/{date:datetime}"
 
 
 @using WeatherUI.Shared
@@ -27,19 +27,28 @@
 </header>
 
 <p>
-    <NavLink href="/fetchdata">Back</NavLink>
+    <NavLink href="weatherforecast">Back</NavLink>
 </p>
 
-<dl> 
-    <dt>Date</dt>
-    <dd>@forecast?.Date.ToShortDateString()</dd>
+@if (forecast == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <dl> 
+        <dt>Date</dt>
+        <dd>@forecast?.Date.ToShortDateString()</dd>
 
-    <dt>Temp. (C)</dt>
-    <dd>@forecast?.TemperatureC</dd>
+        <dt>Temp. (C)</dt>
+        <dd>@forecast?.TemperatureC</dd>
 
-    <dt>Temp. (F)</dt>
-    <dd>@forecast?.TemperatureF</dd>
+        <dt>Temp. (F)</dt>
+        <dd>@forecast?.TemperatureF</dd>
 
-    <dt>Summary</dt>
-    <dd>@forecast?.Summary</dd>
-</dl>
+        <dt>Summary</dt>
+        <dd>@forecast?.Summary</dd>
+    </dl>
+}
+
+
