@@ -2,31 +2,40 @@ using Microsoft.AspNetCore.Mvc;
 using WeatherUI.Shared;
 
 namespace WeatherUI.Server.Controllers;
+
 [ApiController]
-[Route("[controller]")]
-public class WeatherForecastController : ControllerBase
+[Route("/api/[controller]")]
+public class WeatherForecastsController : ControllerBase
 {
     private static readonly string[] Summaries = new[]
     {
         "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
     };
 
-    private readonly ILogger<WeatherForecastController> _logger;
-
-    public WeatherForecastController(ILogger<WeatherForecastController> logger)
+    [HttpGet]
+    public IEnumerable<WeatherForecast> GetAll()
     {
-        _logger = logger;
+        return Enumerable.Range(1, 5)
+            .Select(CreateWeatherForecast)
+            .ToArray();
     }
 
-    [HttpGet]
-    public IEnumerable<WeatherForecast> Get()
+    [HttpGet("{date}")]
+    public WeatherForecast GetByDate(DateTime date)
     {
-        return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+        // TODO: temporal solution for reusability only.
+        TimeSpan diff = date - DateTime.Today;
+
+        return CreateWeatherForecast(diff.Days);
+    }
+
+    private static WeatherForecast CreateWeatherForecast(int index)
+    {
+        return new WeatherForecast
         {
             Date = DateTime.Now.AddDays(index),
             TemperatureC = Random.Shared.Next(-20, 55),
             Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-        })
-        .ToArray();
+        };
     }
 }

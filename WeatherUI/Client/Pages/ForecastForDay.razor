@@ -1,0 +1,45 @@
+﻿@page "/fetchdata/{date:datetime}"
+
+
+@using WeatherUI.Shared
+@inject HttpClient Http
+
+
+@code {
+    const string PageTitle = "Weather forecast for a day";
+
+    [Parameter]
+    public DateTime Date { get; set; }
+
+    private WeatherForecast? forecast;
+
+    protected override async Task OnInitializedAsync()
+    {
+        forecast = await Http.GetFromJsonAsync<WeatherForecast>($"/api/weatherforecasts/{Date.ToString("yyyy-MM-dd")}");
+    }
+}
+
+
+<PageTitle>@PageTitle</PageTitle>
+
+<header>
+    <h1>@PageTitle</h1>
+</header>
+
+<p>
+    <NavLink href="/fetchdata">Back</NavLink>
+</p>
+
+<dl> 
+    <dt>Date</dt>
+    <dd>@forecast?.Date.ToShortDateString()</dd>
+
+    <dt>Temp. (C)</dt>
+    <dd>@forecast?.TemperatureC</dd>
+
+    <dt>Temp. (F)</dt>
+    <dd>@forecast?.TemperatureF</dd>
+
+    <dt>Summary</dt>
+    <dd>@forecast?.Summary</dd>
+</dl>

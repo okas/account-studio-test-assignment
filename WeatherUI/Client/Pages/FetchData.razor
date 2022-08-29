@@ -24,15 +24,18 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var forecast in forecasts)
-            {
-                <tr>
-                    <td>@forecast.Date.ToShortDateString()</td>
-                    <td>@forecast.TemperatureC</td>
-                    <td>@forecast.TemperatureF</td>
-                    <td>@forecast.Summary</td>
+            <Virtualize Items="forecasts">
+                <tr @key="context.Date">
+                    <td>
+                        <NavLink href="@($"fetchdata/{@context.Date.ToString("yyyy-MM-dd")}")">
+                            @context.Date.ToShortDateString()
+                        </NavLink>
+                    </td>
+                    <td>@context.TemperatureC</td>
+                    <td>@context.TemperatureF</td>
+                    <td>@context.Summary</td>
                 </tr>
-            }
+            </Virtualize>
         </tbody>
     </table>
 }
@@ -42,6 +45,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("WeatherForecast");
+        forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("api/weatherforecasts");
     }
 }
