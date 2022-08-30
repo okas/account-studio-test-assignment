@@ -1,12 +1,8 @@
-﻿.hidden {
-    display: none;
-}
-
-.controls {
+﻿.controls {
     margin: 0.5rem;
     display: inline-flex;
-}
 
-    .controls > *:not(:last-child) {
+    & > *:not(:last-child) {
         margin-right: 1rem;
     }
+}

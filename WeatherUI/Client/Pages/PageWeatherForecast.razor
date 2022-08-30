@@ -43,11 +43,6 @@
         IsControlsVisible = !IsControlsVisible;
     }
 
-    private string ToHide(Field field)
-    {
-        return field.Selected ? "" : "hidden";
-    }
-
     private IDictionary<string, dynamic> ViewModelMapper(WeatherForecast model)
     {
         PropertyInfo[] properties = model.GetType().GetProperties();
@@ -103,9 +98,11 @@ else
         <section class="controls">
             @foreach (Field f in Header.OrderBy(f => f.Index))
             {
+                string elemId = CreateId(f);
+
                 <div @key=@f.Name>
-                    <label for=@CreateId(f)>@f.DisplayName</label>
-                    <input id=@CreateId(f) type="checkbox" @bind=@f.Selected @onchange:preventDefault />
+                    <label for=@elemId>@f.DisplayName</label>
+                    <input id=@elemId type="checkbox" @bind=@f.Selected @onchange:preventDefault />
                 </div>
             }
         </section>
@@ -113,25 +110,23 @@ else
     <table class="table">
         <thead>
             <tr>
-                @foreach (Field f in Header.OrderBy(f => f.Index))
+                @foreach (Field f in Header.Where(f => f.Selected).OrderBy(f => f.Index))
                 {
-                    <th @key=@f.Name class=@ToHide(f)>@f.DisplayName</th>
+                    <th @key=@f.Name>@f.DisplayName</th>
                 }
             </tr>
         </thead>
         <tbody>
             <Virtualize Items="viewModels">
                 <tr @key="@(context["Date"].Value)">
-                    @foreach (KeyValuePair<string, dynamic> vm in context.OrderBy(kv => kv.Value.Field.Index))
+                    @foreach (KeyValuePair<string, dynamic> vm in context.Where(kv => kv.Value.Field.Selected).OrderBy(kv => kv.Value.Field.Index))
                     {
-                        <td class=@ToHide(vm.Value.Field)>
+                        <td>
                             @if (vm.Key == "Date")
                             {
                                 DateTime date = Convert.ToDateTime(vm.Value.Value);
 
-                                <NavLink href=@ToPath(date)>
-                                    @date.ToShortDateString()
-                                </NavLink>
+                                <NavLink href=@ToPath(date)>@date.ToShortDateString()</NavLink>
                             }
                             else
                             {
