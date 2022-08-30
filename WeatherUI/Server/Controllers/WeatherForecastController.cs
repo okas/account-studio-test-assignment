@@ -17,7 +17,7 @@ public class WeatherForecastsController : ControllerBase
     {
         return Enumerable.Range(1, 15)
             .Select(CreateWeatherForecast)
-            .ToArray();
+            .ToList();
     }
 
     [HttpGet("{date}")]
