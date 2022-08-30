@@ -112,13 +112,15 @@ else
             <tr>
                 @foreach (Field f in Header.Where(f => f.Selected).OrderBy(f => f.Index))
                 {
-                    <th @key=@f.Name>@f.DisplayName</th>
+                    <th @key=f.Name>
+                        @f.DisplayName
+                    </th>
                 }
             </tr>
         </thead>
         <tbody>
             <Virtualize Items="viewModels">
-                <tr @key="@(context["Date"].Value)">
+                <tr @key=@context["Date"].Value>
                     @foreach (KeyValuePair<string, dynamic> vm in context.Where(kv => kv.Value.Field.Selected).OrderBy(kv => kv.Value.Field.Index))
                     {
                         <td @key=vm.Key>
@@ -126,7 +128,9 @@ else
                             {
                                 DateTime date = Convert.ToDateTime(vm.Value.Value);
 
-                                <NavLink href=@ToPath(date)>@date.ToShortDateString()</NavLink>
+                                <NavLink href=@ToPath(date)>
+                                    @date.ToShortDateString()
+                                </NavLink>
                             }
                             else
                             {
