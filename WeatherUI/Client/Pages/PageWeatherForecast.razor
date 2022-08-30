@@ -121,7 +121,7 @@ else
                 <tr @key="@(context["Date"].Value)">
                     @foreach (KeyValuePair<string, dynamic> vm in context.Where(kv => kv.Value.Field.Selected).OrderBy(kv => kv.Value.Field.Index))
                     {
-                        <td>
+                        <td @key=vm.Key>
                             @if (vm.Key == "Date")
                             {
                                 DateTime date = Convert.ToDateTime(vm.Value.Value);
