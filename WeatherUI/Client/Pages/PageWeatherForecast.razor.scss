@@ -6,3 +6,33 @@
         margin-right: 1rem;
     }
 }
+
+::deep .drag-zone {
+    &:hover {
+        box-shadow: 1px 1px 15px 3px rgba(107, 113, 127, 0.8);
+    }
+
+    .draggable {
+        cursor: grab;
+        user-select: none;
+    }
+
+    .dragging {
+        cursor: grabbing;
+        color: blue;
+        z-index: 9;
+    }
+
+    .over {
+        box-shadow: inset 0px 0px 8px 2px #74f8cc;
+    }
+
+    .dragging ~ .over {
+        border-right: 4px inset red;
+    }
+
+    .over:not(.dragging ~ .over) {
+        border-left: 4px inset red;
+    }
+}
+

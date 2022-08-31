@@ -12,18 +12,20 @@
     public PageWeatherForecast()
     {
         // Represents table metadata, mainly it's header. Here it is possible to handle i18n matters.
-        Header = new()
+        Header = new List<Field>()
         {
-            new Field() { Index = 0, Name = nameof(WeatherForecast.Date), DisplayName = "Date", Selected = true },
-            new Field() { Index = 1, Name = nameof(WeatherForecast.TemperatureC), DisplayName = "Temp. (C)", Selected = true },
-            new Field() { Index = 2, Name = nameof(WeatherForecast.TemperatureF), DisplayName = "Temp. (F)", Selected = true },
-            new Field() { Index = 3, Name = nameof(WeatherForecast.Summary), DisplayName = "Summary", Selected = true },
+            new () { Index = 0, Name = nameof(WeatherForecast.Date), DisplayName = "Date", Selected = true },
+            new () { Index = 1, Name = nameof(WeatherForecast.TemperatureC), DisplayName = "Temp. (C)", Selected = true },
+            new () { Index = 2, Name = nameof(WeatherForecast.TemperatureF), DisplayName = "Temp. (F)", Selected = true },
+            new () { Index = 3, Name = nameof(WeatherForecast.Summary), DisplayName = "Summary", Selected = true },
         };
     }
 
-    private List<Field> Header { get; set; } = new();
+    private IList<Field> Header { get; init; } = Array.Empty<Field>();
 
     private IList<IDictionary<string, dynamic>>? viewModels = default;
+
+    private int? StartedIndex { get; set; }
 
     private bool IsControlsVisible { get; set; } = false;
 
@@ -42,8 +44,6 @@
         IsControlsVisible = !IsControlsVisible;
     }
 
-    private int? StartedIndex { get; set; }
-
     private void ItemMovingChange(Tuple<int, bool> change)
     {
         StartedIndex = change.Item2 ? change.Item1 : null;
@@ -51,15 +51,26 @@
 
     private void ItemDropedOn(int index)
     {
-        int firstIndex = StartedIndex!.Value;
-
-        Field starter = Header.Single(i => i.Index == firstIndex);
-        Field droppedOn = Header.Single(i => i.Index == index);
-
-        starter.Index = index;
-        droppedOn.Index = firstIndex;
-
+        ChnageIndices(index);
         StartedIndex = null;
+    }
+
+    private void ChnageIndices(int targetIndex)
+    {
+        Field starter = Header.Single(i => i.Index == StartedIndex);
+
+        if (StartedIndex < targetIndex)
+        {
+            Header.Where(i => i.Index > StartedIndex && i.Index <= targetIndex)
+                .ToList().ForEach(i => i.Index--);
+        }
+        else
+        {
+            Header.Where(i => i.Index < StartedIndex && i.Index >= targetIndex)
+                .ToList().ForEach(i => i.Index++);
+        }
+
+        starter.Index = targetIndex;
     }
 
     private IList<IDictionary<string, dynamic>> ViewModelMapper(IEnumerable<WeatherForecast> models)
@@ -109,7 +120,7 @@
 
 <section>
     <button @onclick=ToggleHeaderControls @onclick:preventDefault>
-        Change data layout
+        Show layout tools
     </button>
 </section>
 
@@ -135,20 +146,29 @@ else
     }
     <table class="table">
         <thead>
-            <tr>
-                @foreach (Field f in Header.Where(f => f.Selected).OrderBy(f => f.Index))
-                {
-                    string elemId = $"dragItem_{f.Name}";
 
-                    <DragItem 
-                    id=@elemId 
-                    @key=elemId Active=@true
-                    Index=@f.Index 
-                    Content=@f.DisplayName 
-                    OnDroppedOn=@ItemDropedOn 
-                    OnMovingChanged=@ItemMovingChange />
-                }
-            </tr>
+            <DragZone Data=@Header.Where(f => f.Selected).OrderBy(f => f.Index)>
+
+                <ListTemplate Context="header">
+                    <tr class=@(@IsControlsVisible ? "drag-zone" : "")>
+                        @header
+                    </tr>
+                </ListTemplate>
+
+                <ItemTemplate Context="field">
+
+                    <DragItem Tag="th"
+                          Active=@IsControlsVisible
+                          Index=@field.Index
+                          OnDroppedToOther=@ItemDropedOn
+                          OnMovingChanged=@ItemMovingChange>
+                        @field.DisplayName
+                    </DragItem>
+
+                </ItemTemplate>
+
+            </DragZone>
+
         </thead>
         <tbody>
             <Virtualize Items="viewModels">
