@@ -9,10 +9,14 @@
 @code {
     const string PageTitle = "Weather forecast";
 
+    private IList<Field> _header = Array.Empty<Field>();
+
+    private IList<IDictionary<string, dynamic>>? viewModels = default;
+
     public PageWeatherForecast()
     {
         // Represents table metadata, mainly it's header. Here it is possible to handle i18n matters.
-        Header = new List<Field>()
+        DefaultHeader = new List<Field>()
         {
             new () { Index = 0, Name = nameof(WeatherForecast.Date), DisplayName = "Date", Selected = true },
             new () { Index = 1, Name = nameof(WeatherForecast.TemperatureC), DisplayName = "Temp. (C)", Selected = true },
@@ -21,9 +25,13 @@
         };
     }
 
-    private IList<Field> Header { get; init; } = Array.Empty<Field>();
+    private IReadOnlyList<Field> DefaultHeader { get; init; } = Array.Empty<Field>();
 
-    private IList<IDictionary<string, dynamic>>? viewModels = default;
+    private IList<Field> Header
+    {
+        get => _header.OrderBy(f => f.Index).ToList();
+        set { _header = value; }
+    }
 
     private int? StartedIndex { get; set; }
 
@@ -98,6 +106,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        Header = DefaultHeader.Select(f => f with { }).ToList();
+
         var forecasts = await Http.GetFromJsonAsync<IEnumerable<WeatherForecast>>("api/weatherforecasts");
 
         if (forecasts is not null && forecasts.Any())
@@ -173,7 +183,9 @@ else
         <tbody>
             <Virtualize Items="viewModels">
                 <tr @key=@context["Date"].Value>
-                    @foreach (KeyValuePair<string, dynamic> vm in context.Where(kv => kv.Value.Field.Selected).OrderBy(kv => kv.Value.Field.Index))
+                    @foreach (KeyValuePair<string, dynamic> vm in context
+                        .Where(kv => kv.Value.Field.Selected)
+                        .OrderBy(kv => kv.Value.Field.Index))
                     {
                         <td @key=vm.Key>
                             @if (vm.Key == "Date")
