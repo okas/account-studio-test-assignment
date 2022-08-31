@@ -1,0 +1,100 @@
+﻿@code {
+    [Parameter]
+    public string? Id { get; set; } = default;
+
+    [Parameter]
+    public bool Active { get; set; }
+
+    [Parameter]
+    public int Index { get; set; }
+
+    [Parameter]
+    public string? Content { get; set; } = default;
+
+    [Parameter]
+    public EventCallback<Tuple<int, bool>> OnMovingChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnDroppedOn { get; set; }
+
+    private bool Moving { get; set; } = false;
+
+    private bool Over { get; set; } = false;
+
+    private async Task OnStart(DragEventArgs evt)
+    {
+        Moving = true;
+        Console.WriteLine($"*{Content}*onStart(label): Moving: *{Moving}*");
+        await OnMovingChanged.InvokeAsync(new(Index, Moving));
+    }
+
+    private void OnEnter(DragEventArgs evt)
+    {
+        if (!Moving)
+        {
+            Over = true;
+            Console.WriteLine($"*{Content}*onEnter(label)");
+        };
+    }
+
+    private void OnLeave(DragEventArgs evt)
+    {
+        if (!Moving)
+        {
+            Over = false;
+            Console.WriteLine($"*{Content}*onLeave(label)");
+        };
+    }
+
+    private async Task OnDrop(DragEventArgs evt)
+    {
+        Moving = false;
+        Over = false;
+        Console.WriteLine($"*{Content}*onDrop(label)");
+        await OnDroppedOn.InvokeAsync(Index);
+    }
+
+    private async Task OnEnd(DragEventArgs evt)
+    {
+        Moving = false;
+        Console.WriteLine($"*{Content}*onEnd(label): Moving: *{Moving}*");
+        await OnMovingChanged.InvokeAsync(new(Index, Moving));
+    }
+
+    private string CssHelper()
+    {
+        return $"{(!Active ? "" : Moving ? "dragging" : "draggable")} {(Over ? "over" : "")}";
+    }
+}
+
+
+<th id=@Id
+     draggable=@Active.ToString().ToLower()
+     class=@($"item {CssHelper()}")
+     @ondragstart=OnStart
+     @ondrop=OnDrop
+     @ondragenter=OnEnter
+     @ondragleave=OnLeave
+     @ondragend=OnEnd
+     @ondragover=@(e=>{})
+     @ondragover:preventDefault>
+    @Content
+</th>
+
+
+<style>
+    .dragging {
+        cursor: grabbing;
+        color: blue;
+        z-index: 9;
+    }
+
+    .draggable {
+        cursor: grab;
+        user-select: none;
+    }
+
+    .over {
+        color: red;
+    }
+</style>
