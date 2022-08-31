@@ -1,6 +1,6 @@
 ﻿@code {
     [Parameter]
-    public string? Id { get; set; } = default;
+    public string Tag { get; set; } = "div";
 
     [Parameter]
     public bool Active { get; set; } = true;
@@ -9,7 +9,7 @@
     public int Index { get; set; }
 
     [Parameter]
-    public string? Content { get; set; } = default;
+    public RenderFragment? ChildContent { get; set; }
 
     [Parameter]
     public EventCallback<Tuple<int, bool>> OnMovingChanged { get; set; }
@@ -17,14 +17,18 @@
     [Parameter]
     public EventCallback<int> OnDroppedToOther { get; set; }
 
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AllOtherAttributes { get; set; }
+
     private bool Moving { get; set; } = false;
 
     private bool Over { get; set; } = false;
 
+    private RenderFragment? DynamicMarkup { get; set; }
+
     private async Task OnStart(DragEventArgs evt)
     {
         Moving = true;
-        Console.WriteLine($"*{Content}*onStart(label): Moving: *{Moving}*");
         await OnMovingChanged.InvokeAsync(new(Index, Moving));
     }
 
@@ -33,8 +37,7 @@
         if (!Moving)
         {
             Over = true;
-            Console.WriteLine($"*{Content}*onEnter(label)");
-        };
+        }
     }
 
     private void OnLeave(DragEventArgs evt)
@@ -42,8 +45,7 @@
         if (!Moving)
         {
             Over = false;
-            Console.WriteLine($"*{Content}*onLeave(label)");
-        };
+        }
     }
 
     private async Task OnDrop(DragEventArgs evt)
@@ -57,34 +59,46 @@
         {
             await OnDroppedToOther.InvokeAsync(Index);
         }
-
-        Console.WriteLine($"*{Content}*onDrop(label)");
-
     }
 
     private async Task OnEnd(DragEventArgs evt)
     {
         Moving = false;
-        Console.WriteLine($"*{Content}*onEnd(label): Moving: *{Moving}*");
         await OnMovingChanged.InvokeAsync(new(Index, Moving));
     }
 
-    private string CssHelper()
+    private Action<DragEventArgs> OnOver = e => { };
+
+    private string GetCss()
     {
-        return $"{(!Active ? "" : Moving ? "dragging" : "draggable")} {(Over ? "over" : "")}".Trim();
+        return $"drag-item {(!Active ? "" : Moving ? "dragging" : "draggable")} {(Over ? "over" : "")}".Trim();
+    }
+
+    private RenderFragment CreateDynamicMarkup() => builder =>
+    {
+        builder.OpenElement(0, Tag);
+        builder.AddMultipleAttributes(1, AllOtherAttributes);
+        builder.AddAttribute(2, "draggable", Active.ToString().ToLower());
+        builder.AddAttribute(3, "class", GetCss());
+
+        builder.AddAttribute(4, "ondragstart", OnStart);
+        builder.AddAttribute(5, "ondrop", OnDrop);
+        builder.AddAttribute(6, "ondragenter", OnEnter);
+        builder.AddAttribute(7, "ondragleave", OnLeave);
+        builder.AddAttribute(8, "ondragend", OnEnd);
+
+        builder.AddAttribute(9, "ondragover", OnOver);
+        builder.AddEventPreventDefaultAttribute(10, "ondragover", true);
+
+        builder.AddContent(11, ChildContent);
+        builder.CloseElement();
+    };
+
+    protected override void OnInitialized()
+    {
+        DynamicMarkup = CreateDynamicMarkup();
     }
 }
 
+@DynamicMarkup
 
-<th id=@Id
-    draggable=@Active.ToString().ToLower()
-    class=@($"drag-item {CssHelper()}")
-    @ondragstart=OnStart
-    @ondrop=OnDrop
-    @ondragenter=OnEnter
-    @ondragleave=OnLeave
-    @ondragend=OnEnd
-    @ondragover=@(e=>{})
-    @ondragover:preventDefault>
-    @Content
-</th>

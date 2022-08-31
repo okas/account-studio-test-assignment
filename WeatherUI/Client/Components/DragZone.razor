@@ -1,0 +1,56 @@
+﻿@typeparam TItem
+
+@code
+{
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AllOtherAttributes { get; set; }
+
+    [Parameter]
+    public IEnumerable<TItem> Data { get; set; } = Array.Empty<TItem>();
+
+    [Parameter]
+    public RenderFragment<RenderFragment>? ListTemplate { get; set; }
+
+    [Parameter]
+    public RenderFragment<TItem>? ItemTemplate { get; set; }
+
+    private string Css = "drag-zone";
+
+    protected override void OnParametersSet()
+    {
+        if (ItemTemplate is null)
+        {
+            ItemTemplate = (item) =>
+    @:@{
+        <li @key=item>
+            @item.ToString()
+        </li>
+    }
+    ;
+        }
+
+        if (ListTemplate is null)
+        {
+            ListTemplate = _ =>
+    @:@{
+        <ul class=@Css>
+            @foreach (TItem item in Data)
+            {
+                @ItemTemplate(item)
+            }
+        </ul>
+    }
+        ;
+        }
+    }
+}
+
+
+@ListTemplate!(
+    @:@{
+    foreach (TItem item in Data)
+    {
+        @ItemTemplate!(item)
+    }
+    }
+)

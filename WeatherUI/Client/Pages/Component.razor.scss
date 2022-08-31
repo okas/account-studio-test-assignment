@@ -1,0 +1,34 @@
+﻿::deep .drag-zone {
+    border: 1px solid black;
+    height: 400px;
+}
+
+::deep .drag-item {
+    margin: 1rem 0;
+    height: 50px;
+    width: 50px;
+    border: 1px solid violet;
+}
+
+::deep .dragging ~ .over {
+    border-right: 2px solid red;
+}
+
+::deep .over:not(.dragging ~ .over) {
+    border-left: 2px solid red;
+}
+
+::deep .dragging {
+    cursor: grabbing;
+    color: blue;
+    z-index: 9;
+}
+
+::deep .draggable {
+    cursor: grab;
+    user-select: none;
+}
+
+::deep .over {
+    color: red;
+}

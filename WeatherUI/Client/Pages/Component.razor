@@ -10,9 +10,10 @@
         public int Index { get; set; } = Index;
     };
 
-    public Component()
+    protected override void OnInitialized()
     {
-        Items = new() {
+        base.OnInitialized();
+        Items = new List<Item>() {
             new (0, "1"),
             new (1, "2"),
             new (2, "3"),
@@ -23,7 +24,7 @@
         };
     }
 
-    public List<Item> Items { get; }
+    private IList<Item> Items = Array.Empty<Item>();
 
     private int? StartedIndex { get; set; }
 
@@ -33,16 +34,12 @@
 
     private void ItemMovingChange(Tuple<int, bool> change)
     {
-        Console.WriteLine($"-ItemMovingChange: {change}");
         StartedIndex = change.Item2 ? change.Item1 : null;
     }
 
     private void ItemDropedOn(int index)
     {
-        Console.WriteLine($"-ItemDropedOn, dropped: {index}; starter: {StartedIndex!.Value}");
-
         ChnageIndices(index);
-
         StartedIndex = null;
     }
 
@@ -68,39 +65,23 @@
 
 <PageTitle>Drag & Drop Sample</PageTitle>
 
-<div class="area">
-    @foreach (Item i in Items.OrderBy(i => i.Index))
-    {
-        string elemId = $"dragItem_{i.Label}";
-
-        <DragItem @key=elemId
-              Active=@true
-              Index=@i.Index
-              Content=@i.Label
-              OnDroppedToOther=@ItemDropedOn
-              OnMovingChanged=@ItemMovingChange />
-    }
+<div class="demo-container">
+    <DragZone Data=@Items.OrderBy(i => i.Index)>
+        <ListTemplate Context="items">
+            <tr>
+                @items
+            </tr>
+        </ListTemplate>
+        <ItemTemplate Context="item">
+            <DragItem Tag="th"
+                      Active=@true
+                      Index=@item.Index
+                      OnDroppedToOther=@ItemDropedOn
+                      OnMovingChanged=@ItemMovingChange>
+                @item.Label
+            </DragItem>
+        </ItemTemplate>
+    </DragZone>
 </div>
 
 
-<style>
-    .area {
-        border: 1px solid black;
-        height: 400px;
-    }
-
-    .drag-item {
-        margin: 1rem 0;
-        height: 50px;
-        width: 50px;
-        border: 1px solid violet;
-    }
-
-    .dragging ~ .over {
-        border-right: 2px solid red;
-    }
-
-    .over:not(.dragging ~ .over) {
-        border-left: 2px solid red;
-    }
-</style>
