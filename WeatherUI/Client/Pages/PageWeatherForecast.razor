@@ -42,7 +42,26 @@
         IsControlsVisible = !IsControlsVisible;
     }
 
-    private IDictionary<string, dynamic> ViewModelMapper(WeatherForecast model)
+    private int? StartedIndex { get; set; }
+
+    private void ItemMovingChange(Tuple<int, bool> change)
+    {
+        StartedIndex = change.Item2 ? change.Item1 : null;
+    }
+
+    private void ItemDropedOn(int index)
+    {
+        int firstIndex = StartedIndex!.Value;
+
+        Field starter = Header.Single(i => i.Index == firstIndex);
+        Field droppedOn = Header.Single(i => i.Index == index);
+
+        starter.Index = index;
+        droppedOn.Index = firstIndex;
+
+        StartedIndex = null;
+    }
+
     private IList<IDictionary<string, dynamic>> ViewModelMapper(IEnumerable<WeatherForecast> models)
     {
         PropertyInfo[] properties = typeof(WeatherForecast).GetProperties();
@@ -89,7 +108,9 @@
 <p>This component demonstrates fetching data from the server.</p>
 
 <section>
-    <button @onclick="ToggleHeaderControls">Change data layout</button>
+    <button @onclick=ToggleHeaderControls @onclick:preventDefault>
+        Change data layout
+    </button>
 </section>
 
 @if (viewModels == null)
@@ -117,9 +138,15 @@ else
             <tr>
                 @foreach (Field f in Header.Where(f => f.Selected).OrderBy(f => f.Index))
                 {
-                    <th @key=f.Name>
-                        @f.DisplayName
-                    </th>
+                    string elemId = $"dragItem_{f.Name}";
+
+                    <DragItem 
+                    id=@elemId 
+                    @key=elemId Active=@true
+                    Index=@f.Index 
+                    Content=@f.DisplayName 
+                    OnDroppedOn=@ItemDropedOn 
+                    OnMovingChanged=@ItemMovingChange />
                 }
             </tr>
         </thead>
@@ -148,3 +175,4 @@ else
         </tbody>
     </table>
 }
+
