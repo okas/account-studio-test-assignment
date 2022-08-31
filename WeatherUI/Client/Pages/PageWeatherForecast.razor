@@ -27,11 +27,7 @@
 
     private IReadOnlyList<Field> DefaultHeader { get; init; } = Array.Empty<Field>();
 
-    private IList<Field> Header
-    {
-        get => _header.OrderBy(f => f.Index).ToList();
-        set { _header = value; }
-    }
+    private IList<Field> Header { get; set; } = Array.Empty<Field>();
 
     private int? StartedIndex { get; set; }
 
@@ -184,8 +180,8 @@ else
             <Virtualize Items="viewModels">
                 <tr @key=@context["Date"].Value>
                     @foreach (KeyValuePair<string, dynamic> vm in context
-                        .Where(kv => kv.Value.Field.Selected)
-                        .OrderBy(kv => kv.Value.Field.Index))
+                .Where(kv => kv.Value.Field.Selected)
+                .OrderBy(kv => kv.Value.Field.Index))
                     {
                         <td @key=vm.Key>
                             @if (vm.Key == "Date")
