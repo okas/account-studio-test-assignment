@@ -3,7 +3,7 @@
     public string? Id { get; set; } = default;
 
     [Parameter]
-    public bool Active { get; set; }
+    public bool Active { get; set; } = true;
 
     [Parameter]
     public int Index { get; set; }
@@ -15,7 +15,7 @@
     public EventCallback<Tuple<int, bool>> OnMovingChanged { get; set; }
 
     [Parameter]
-    public EventCallback<int> OnDroppedOn { get; set; }
+    public EventCallback<int> OnDroppedToOther { get; set; }
 
     private bool Moving { get; set; } = false;
 
@@ -48,10 +48,18 @@
 
     private async Task OnDrop(DragEventArgs evt)
     {
+        bool self = Moving;
+
         Moving = false;
         Over = false;
+
+        if (!self)
+        {
+            await OnDroppedToOther.InvokeAsync(Index);
+        }
+
         Console.WriteLine($"*{Content}*onDrop(label)");
-        await OnDroppedOn.InvokeAsync(Index);
+
     }
 
     private async Task OnEnd(DragEventArgs evt)
@@ -63,38 +71,20 @@
 
     private string CssHelper()
     {
-        return $"{(!Active ? "" : Moving ? "dragging" : "draggable")} {(Over ? "over" : "")}";
+        return $"{(!Active ? "" : Moving ? "dragging" : "draggable")} {(Over ? "over" : "")}".Trim();
     }
 }
 
 
 <th id=@Id
-     draggable=@Active.ToString().ToLower()
-     class=@($"item {CssHelper()}")
-     @ondragstart=OnStart
-     @ondrop=OnDrop
-     @ondragenter=OnEnter
-     @ondragleave=OnLeave
-     @ondragend=OnEnd
-     @ondragover=@(e=>{})
-     @ondragover:preventDefault>
+    draggable=@Active.ToString().ToLower()
+    class=@($"drag-item {CssHelper()}")
+    @ondragstart=OnStart
+    @ondrop=OnDrop
+    @ondragenter=OnEnter
+    @ondragleave=OnLeave
+    @ondragend=OnEnd
+    @ondragover=@(e=>{})
+    @ondragover:preventDefault>
     @Content
 </th>
-
-
-<style>
-    .dragging {
-        cursor: grabbing;
-        color: blue;
-        z-index: 9;
-    }
-
-    .draggable {
-        cursor: grab;
-        user-select: none;
-    }
-
-    .over {
-        color: red;
-    }
-</style>

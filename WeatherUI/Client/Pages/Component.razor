@@ -16,13 +16,20 @@
             new (0, "1"),
             new (1, "2"),
             new (2, "3"),
-            new (3, "4")
+            new (3, "4"),
+            new (4, "5"),
+            new (5, "6"),
+            new (6, "7"),
         };
     }
 
     public List<Item> Items { get; }
 
     private int? StartedIndex { get; set; }
+
+    private int? MinIndex { get => Items.MinBy(i => i.Index)?.Index; }
+
+    private int? MaxIndex { get => Items.MaxBy(i => i.Index)?.Index; }
 
     private void ItemMovingChange(Tuple<int, bool> change)
     {
@@ -34,15 +41,27 @@
     {
         Console.WriteLine($"-ItemDropedOn, dropped: {index}; starter: {StartedIndex!.Value}");
 
-        int firstIndex = StartedIndex!.Value;
-
-        Item starter = Items.Single(i => i.Index == firstIndex);
-        Item droppedOn = Items.Single(i => i.Index == index);
-
-        starter.Index = index;
-        droppedOn.Index = firstIndex;
+        ChnageIndices(index);
 
         StartedIndex = null;
+    }
+
+    private void ChnageIndices(int targetIndex)
+    {
+        Item starter = Items.Single(i => i.Index == StartedIndex);
+
+        if (StartedIndex < targetIndex)
+        {
+            Items.Where(i => i.Index > StartedIndex && i.Index <= targetIndex)
+                .ToList().ForEach(i => i.Index--);
+        }
+        else
+        {
+            Items.Where(i => i.Index < StartedIndex && i.Index >= targetIndex)
+                .ToList().ForEach(i => i.Index++);
+        }
+
+        starter.Index = targetIndex;
     }
 }
 
@@ -54,7 +73,12 @@
     {
         string elemId = $"dragItem_{i.Label}";
 
-        <DragItem id=@elemId @key=elemId Active=@true Index=@i.Index Content=@i.Label OnDroppedOn=@ItemDropedOn OnMovingChanged=@ItemMovingChange />
+        <DragItem @key=elemId
+              Active=@true
+              Index=@i.Index
+              Content=@i.Label
+              OnDroppedToOther=@ItemDropedOn
+              OnMovingChanged=@ItemMovingChange />
     }
 </div>
 
@@ -65,10 +89,18 @@
         height: 400px;
     }
 
-    .item {
+    .drag-item {
         margin: 1rem 0;
         height: 50px;
         width: 50px;
         border: 1px solid violet;
+    }
+
+    .dragging ~ .over {
+        border-right: 2px solid red;
+    }
+
+    .over:not(.dragging ~ .over) {
+        border-left: 2px solid red;
     }
 </style>

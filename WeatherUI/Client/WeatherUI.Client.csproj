@@ -24,6 +24,10 @@
     <WarningLevel>7</WarningLevel>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Include="..\..\LICENSE.txt">
       <Pack>True</Pack>

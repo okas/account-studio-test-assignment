@@ -1,0 +1,14 @@
+﻿.dragging {
+    cursor: grabbing;
+    color: blue;
+    z-index: 9;
+}
+
+.draggable {
+    cursor: grab;
+    user-select: none;
+}
+
+.over {
+    color: red;
+}
