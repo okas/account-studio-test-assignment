@@ -1,4 +1,4 @@
-﻿@page "/weatherforecast/{date:datetime}"
+﻿@page "/weatherforecast/{id:guid}"
 
 
 @using WeatherUI.Shared
@@ -9,13 +9,13 @@
     const string PageTitle = "Weather forecast for a day";
 
     [Parameter]
-    public DateTime Date { get; set; }
+    public Guid Id { get; set; }
 
     private WeatherForecast? forecast;
 
     protected override async Task OnInitializedAsync()
     {
-        forecast = await Http.GetFromJsonAsync<WeatherForecast>($"/api/weatherforecasts/{Date.ToString("yyyy-MM-dd")}");
+        forecast = await Http.GetFromJsonAsync<WeatherForecast>($"/api/weatherforecasts/{Id}");
     }
 }
 

@@ -15,13 +15,15 @@
 
     public PageWeatherForecast()
     {
+        int idx = 0;
         // Represents table metadata, mainly it's header. Here it is possible to handle i18n matters.
         DefaultHeader = new List<Field>()
         {
-            new () { Index = 0, Name = nameof(WeatherForecast.Date), DisplayName = "Date", Selected = true },
-            new () { Index = 1, Name = nameof(WeatherForecast.TemperatureC), DisplayName = "Temp. (C)", Selected = true },
-            new () { Index = 2, Name = nameof(WeatherForecast.TemperatureF), DisplayName = "Temp. (F)", Selected = true },
-            new () { Index = 3, Name = nameof(WeatherForecast.Summary), DisplayName = "Summary", Selected = true },
+            new () { Index = idx, Name = nameof(WeatherForecast.Id), DisplayName = "Link", Selected = true },
+            new () { Index = ++idx, Name = nameof(WeatherForecast.Date), DisplayName = "Date", Selected = true },
+            new () { Index = ++idx, Name = nameof(WeatherForecast.TemperatureC), DisplayName = "Temp. (C)", Selected = true },
+            new () { Index = ++idx, Name = nameof(WeatherForecast.TemperatureF), DisplayName = "Temp. (F)", Selected = true },
+            new () { Index = ++idx, Name = nameof(WeatherForecast.Summary), DisplayName = "Summary", Selected = true },
         };
     }
 
@@ -33,9 +35,9 @@
 
     private bool IsControlsVisible { get; set; } = false;
 
-    private static string ToPath(DateTime date)
+    private static string ToPath(Guid id)
     {
-        return $"weatherforecast/{date.ToString("yyyy-MM-dd")}";
+        return $"weatherforecast/{id}";
     }
 
     private string CreateId(Field field)
@@ -178,18 +180,18 @@ else
         </thead>
         <tbody>
             <Virtualize Items="viewModels">
-                <tr @key=@context["Date"].Value>
-                    @foreach (KeyValuePair<string, dynamic> vm in context
-                .Where(kv => kv.Value.Field.Selected)
-                .OrderBy(kv => kv.Value.Field.Index))
+                <tr @key=@context[nameof(WeatherForecast.Id)].Value>
+                    @foreach (KeyValuePair<string, dynamic> vm in context.Where(kv => kv.Value.Field.Selected).OrderBy(kv => kv.Value.Field.Index))
                     {
                         <td @key=vm.Key>
-                            @if (vm.Key == "Date")
+                            @if (vm.Key == nameof(WeatherForecast.Date))
                             {
-                                DateTime date = Convert.ToDateTime(vm.Value.Value);
-
-                                <NavLink href=@ToPath(date)>
-                                    @date.ToShortDateString()
+                                @Convert.ToDateTime(vm.Value.Value).ToShortDateString()
+                            }
+                            else if (vm.Key == nameof(WeatherForecast.Id))
+                            {
+                                <NavLink href=@ToPath(context[nameof(WeatherForecast.Id)].Value)>
+                                    🔗
                                 </NavLink>
                             }
                             else
