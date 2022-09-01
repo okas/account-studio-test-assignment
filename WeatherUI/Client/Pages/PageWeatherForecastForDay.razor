@@ -5,50 +5,77 @@
 @using WeatherUI.Shared
 
 @inject WeatherForecastsHttpClientService WeatherForecastsService
+@inject IStringLocalizer<Resources.PageWeatherForecastForDay> L10n
+@inject IStringLocalizer<Resources.General> L10nGeneral
+@inject IStringLocalizer<Shared.Resources.WeatherForecast> L10nWeatherForecast
 
 @code {
-    const string PageTitle = "Weather forecast for a day";
+    const string PAGE_ID = "page-weatherforecast";
+
+    const string HC_USERID = "u1";
 
     [Parameter]
     public Guid Id { get; set; }
 
-    private WeatherForecast? forecast;
+    private WeatherForecast? Forecast { get; set; } = default;
 
     protected override async Task OnInitializedAsync()
     {
-        forecast = await WeatherForecastsService.GetOne(Id);
+        Forecast = await WeatherForecastsService.GetOne(Id);
     }
 }
 
 
-<PageTitle>@PageTitle</PageTitle>
+<PageTitle>
+    @L10n["Title"]
+</PageTitle>
 
 <header>
-    <h1>@PageTitle</h1>
+    <h1>@L10n["Title"]</h1>
 </header>
 
 <p>
-    <NavLink href="weatherforecast">Back</NavLink>
+    <NavLink href="weatherforecast">
+        ⬅️ @L10nGeneral["Back"]
+    </NavLink>
 </p>
 
-@if (forecast == null)
+@if (Forecast is null)
 {
-    <p><em>Loading...</em></p>
+    <p>
+        <em>@L10nGeneral["Loading"]...</em>
+    </p>
 }
 else
 {
-    <dl> 
-        <dt>Date</dt>
-        <dd>@forecast?.Date.ToShortDateString()</dd>
+    <dl>
+        <dt>
+            @L10nWeatherForecast[nameof(WeatherForecast.Date)]
+        </dt>
+        <dd>
+            @Forecast?.Date.ToShortDateString()
+        </dd>
 
-        <dt>Temp. (C)</dt>
-        <dd>@forecast?.TemperatureC</dd>
+        <dt>
+            @L10nWeatherForecast[nameof(WeatherForecast.TemperatureC)]
+        </dt>
+        <dd>
+            @Forecast?.TemperatureC
+        </dd>
 
-        <dt>Temp. (F)</dt>
-        <dd>@forecast?.TemperatureF</dd>
+        <dt>
+            @L10nWeatherForecast[nameof(WeatherForecast.TemperatureF)]
+        </dt>
+        <dd>
+            @Forecast?.TemperatureF
+        </dd>
 
-        <dt>Summary</dt>
-        <dd>@forecast?.Summary</dd>
+        <dt>
+            @L10nWeatherForecast[nameof(WeatherForecast.Summary)]
+        </dt>
+        <dd>
+            @Forecast?.Summary
+        </dd>
     </dl>
 }
 

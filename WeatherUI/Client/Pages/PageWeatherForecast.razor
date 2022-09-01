@@ -8,11 +8,11 @@
 
 @inject WeatherForecastsHttpClientService WatherForecastsService
 @inject PageViewItemsHttpClientService PageViewItemService
+@inject IStringLocalizer<Resources.PageWeatherForecast> L10n
+@inject IStringLocalizer<Resources.General> L10nGeneral
 @inject IStringLocalizer<Shared.Resources.WeatherForecast> L10nWeatherForecast
 
 @code {
-    const string PAGE_TITILE = "Weather forecast";
-
     const string PAGE_ID = "page-weatherforecast";
 
     const string HC_USERID = "u1";
@@ -144,24 +144,26 @@
 
 
 <PageTitle>
-    @PAGE_TITILE
+    @L10n["Title"]
 </PageTitle>
 
 <header>
-    <h1>@PAGE_TITILE</h1>
+    <h1>@L10n["Title"]</h1>
 </header>
 
-<p>This component demonstrates fetching data from the server.</p>
+<p>@L10n["Str_1"]</p>
 
 <section>
     <button @onclick=ToggleHeaderControls @onclick:preventDefault>
-        Show layout tools
+        @L10nGeneral["ShowLayoutTools"]
     </button>
 </section>
 
 @if (ViewModels is null)
 {
-    <p><em>Loading...</em></p>
+    <p>
+        <em>@L10nGeneral["Loading"]...</em>
+    </p>
 }
 else
 {
