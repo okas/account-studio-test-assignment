@@ -1,0 +1,37 @@
+﻿@using System.Globalization
+@using Microsoft.Extensions.Options
+@using WeatherUI.Client.Helpers
+
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Nav
+@inject IOptions<ClientConfig> Options
+
+@code
+{
+    public CultureInfo Culture
+    {
+        get => CultureInfo.CurrentCulture;
+        set
+        {
+            {
+                var js = (IJSInProcessRuntime)JSRuntime;
+                js.InvokeVoid("appCulture.set", value.Name);
+                Nav.NavigateTo(Nav.Uri, forceLoad: true);
+            }
+        }
+    }
+}
+
+
+<div class="col-md-2">
+    <select class="form-control" @bind="Culture">
+        <option disabled selected value>👉🌐</option>
+        @foreach (CultureInfo c in Options.Value.SupportedCultures)
+        {
+            <option value="@c">
+                @c.DisplayName
+            </option>
+        }
+    </select>
+</div>
+
