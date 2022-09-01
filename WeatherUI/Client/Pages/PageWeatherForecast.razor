@@ -4,6 +4,7 @@
 @using WeatherUI.Shared;
 @using WeatherUI.Client.Helpers
 @inject HttpClient Http;
+@inject IStringLocalizer<Shared.Resources.WeatherForecast> L10nWeatherForecast
 
 
 @code {
@@ -13,38 +14,20 @@
 
     const string HC_USERID = "u1";
 
-    private IList<Field> _header = Array.Empty<Field>();
+    private IList<PageViewItem> Header { get; set; } = Array.Empty<PageViewItem>();
 
-    private IList<IDictionary<string, dynamic>>? viewModels = default;
-
-    public PageWeatherForecast()
-    {
-        int idx = 0;
-        // Represents table metadata, mainly it's header. Here it is possible to handle i18n matters.
-        DefaultHeader = new List<Field>()
-        {
-            new () { Index = idx, Name = nameof(WeatherForecast.Id), DisplayName = "Link", Selected = true },
-            new () { Index = ++idx, Name = nameof(WeatherForecast.Date), DisplayName = "Date", Selected = true },
-            new () { Index = ++idx, Name = nameof(WeatherForecast.TemperatureC), DisplayName = "Temp. (C)", Selected = true },
-            new () { Index = ++idx, Name = nameof(WeatherForecast.TemperatureF), DisplayName = "Temp. (F)", Selected = true },
-            new () { Index = ++idx, Name = nameof(WeatherForecast.Summary), DisplayName = "Summary", Selected = true },
-        };
-    }
-
-    private IReadOnlyList<Field> DefaultHeader { get; init; } = Array.Empty<Field>();
-
-    private IList<Field> Header { get; set; } = Array.Empty<Field>();
+    private IList<IDictionary<string, object>>? ViewModels { get; set; } = default;
 
     private int? StartedIndex { get; set; }
 
     private bool IsControlsVisible { get; set; } = false;
 
-    private static string ToPath(Guid id)
+    private static string ToPath(object id)
     {
         return $"weatherforecast/{id}";
     }
 
-    private string CreateId(Field field)
+    private string CreateId(PageViewItem field)
     {
         return $"header_{@field.Name}";
     }
@@ -67,7 +50,7 @@
 
     private void ChnageIndices(int targetIndex)
     {
-        Field starter = Header.Single(i => i.Index == StartedIndex);
+        PageViewItem starter = Header.Single(i => i.Index == StartedIndex);
 
         if (StartedIndex < targetIndex)
         {
@@ -83,7 +66,21 @@
         starter.Index = targetIndex;
     }
 
-    private IList<IDictionary<string, dynamic>> ViewModelMapper(IEnumerable<WeatherForecast> models)
+    private static IList<PageViewItem> GetDefaultHeader()
+    {
+        int idx = 0;
+
+        return new List<PageViewItem>()
+        {
+            new () { Index = idx, Name = nameof(WeatherForecast.Id), Selected = true },
+            new () { Index = ++idx, Name = nameof(WeatherForecast.Date), Selected = true },
+            new () { Index = ++idx, Name = nameof(WeatherForecast.TemperatureC), Selected = true },
+            new () { Index = ++idx, Name = nameof(WeatherForecast.TemperatureF), Selected = true },
+            new () { Index = ++idx, Name = nameof(WeatherForecast.Summary), Selected = true },
+        };
+    }
+
+    private IList<IDictionary<string, object>> ViewModelMapper(IEnumerable<WeatherForecast> models)
     {
         PropertyInfo[] properties = typeof(WeatherForecast).GetProperties();
 
@@ -91,13 +88,9 @@
             new Dictionary<string, object>(),
             (acc, field) =>
             {
-                var property = properties.Single(p => p.Name == field.Name);
+                PropertyInfo property = properties.Single(p => p.Name == field.Name);
 
-                acc.Add(property.Name, new
-                {
-                    Value = property.GetValue(model),
-                    Field = field
-                });
+                acc.Add(property.Name, property.GetValue(model)!);
 
                 return acc;
             }
@@ -108,16 +101,9 @@
 
     private async Task InitUserPageInfo()
     {
-        var storedHeader = await Http.GetFromJsonAsync<IEnumerable<Field>>($"api/pageviewitems/{PAGE_ID}/{HC_USERID}");
+        var storedHeader = await Http.GetFromJsonAsync<IEnumerable<PageViewItem>>($"api/pageviewitems/{PAGE_ID}/{HC_USERID}");
 
-        Header = storedHeader is not null && storedHeader.Any()
-            ? storedHeader
-                .Select(pi => pi with
-                    {
-                        DisplayName = DefaultHeader.Single(f => f.Name == pi.Name).DisplayName
-                    })
-                .ToList()
-            : DefaultHeader.Select(f => f with { }).ToList();
+        Header = storedHeader?.ToList() ?? GetDefaultHeader();
     }
 
     private async Task InitPageViewModel()
@@ -126,7 +112,7 @@
 
         if (forecasts is not null && forecasts.Any())
         {
-            viewModels = ViewModelMapper(forecasts);
+            ViewModels = ViewModelMapper(forecasts);
         }
     }
 
@@ -154,7 +140,7 @@
     </button>
 </section>
 
-@if (viewModels == null)
+@if (ViewModels is null)
 {
     <p><em>Loading...</em></p>
 }
@@ -163,12 +149,12 @@ else
     @if (IsControlsVisible)
     {
         <section class="controls">
-            @foreach (Field f in Header)
+            @foreach (PageViewItem f in Header)
             {
                 string elemId = CreateId(f);
 
                 <div @key=@f.Name>
-                    <label for=@elemId>@f.DisplayName</label>
+                    <label for=@elemId>@L10nWeatherForecast[f.Name]</label>
                     <input id=@elemId type="checkbox" @bind=@f.Selected @onchange:preventDefault />
                 </div>
             }
@@ -180,7 +166,7 @@ else
             <DragZone Data=@Header.Where(f => f.Selected).OrderBy(f => f.Index)>
 
                 <ListTemplate Context="header">
-                    <tr class=@(@IsControlsVisible ? "drag-zone" : "")>
+                    <tr class=@(IsControlsVisible ? "drag-zone" : "")>
                         @header
                     </tr>
                 </ListTemplate>
@@ -192,7 +178,7 @@ else
                           Index=@field.Index
                           OnDroppedToOther=@ItemDropedOn
                           OnMovingChanged=@ItemMovingChange>
-                        @field.DisplayName
+                        @L10nWeatherForecast[field.Name]
                     </DragItem>
 
                 </ItemTemplate>
@@ -201,29 +187,33 @@ else
 
         </thead>
         <tbody>
-            <Virtualize Items="viewModels">
-                <tr @key=@context[nameof(WeatherForecast.Id)].Value>
-                    @foreach (KeyValuePair<string, dynamic> vm in context.Where(kv => kv.Value.Field.Selected).OrderBy(kv => kv.Value.Field.Index))
+
+            <Virtualize Items="ViewModels">
+                <tr @key=@context>
+                    @foreach (PageViewItem pi in Header.Where(i => i.Selected).OrderBy(i => i.Index))
                     {
-                        <td @key=vm.Key>
-                            @if (vm.Key == nameof(WeatherForecast.Date))
+                        object value = context[pi.Name];
+
+                        <td @key=context[pi.Name]>
+                            @if (pi.Name == nameof(WeatherForecast.Date))
                             {
-                                @Convert.ToDateTime(vm.Value.Value).ToShortDateString()
+                                @Convert.ToDateTime(value).ToShortDateString()
                             }
-                            else if (vm.Key == nameof(WeatherForecast.Id))
+                            else if (pi.Name == nameof(WeatherForecast.Id))
                             {
-                                <NavLink href=@ToPath(context[nameof(WeatherForecast.Id)].Value)>
+                                <NavLink href=@ToPath(value)>
                                     🔗
                                 </NavLink>
                             }
                             else
                             {
-                                @vm.Value.Value
+                                @value
                             }
                         </td>
                     }
                 </tr>
             </Virtualize>
+
         </tbody>
     </table>
 }
