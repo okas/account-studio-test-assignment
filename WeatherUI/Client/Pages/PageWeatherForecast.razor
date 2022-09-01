@@ -7,7 +7,11 @@
 
 
 @code {
-    const string PageTitle = "Weather forecast";
+    const string PAGE_TITILE = "Weather forecast";
+
+    const string PAGE_ID = "page-weatherforecast";
+
+    const string HC_USERID = "u1";
 
     private IList<Field> _header = Array.Empty<Field>();
 
@@ -102,9 +106,23 @@
         return models.Select(mapper).ToList();
     }
 
+    private async Task InitUserPageInfo()
+    {
+        var storedHeader = await Http.GetFromJsonAsync<IEnumerable<Field>>($"api/pageviewitems/{PAGE_ID}/{HC_USERID}");
+
+        Header = storedHeader?.Any() is not null
+            ? storedHeader
+                .Select(pi => pi with
+                    {
+                        DisplayName = DefaultHeader.Single(f => f.Name == pi.Name).DisplayName
+                    })
+                .ToList()
+            : DefaultHeader.Select(f => f with { }).ToList();
+    }
+
     protected override async Task OnInitializedAsync()
     {
-        Header = DefaultHeader.Select(f => f with { }).ToList();
+        await InitUserPageInfo();
 
         var forecasts = await Http.GetFromJsonAsync<IEnumerable<WeatherForecast>>("api/weatherforecasts");
 
@@ -117,11 +135,11 @@
 
 
 <PageTitle>
-    @PageTitle
+    @PAGE_TITILE
 </PageTitle>
 
 <header>
-    <h1>@PageTitle</h1>
+    <h1>@PAGE_TITILE</h1>
 </header>
 
 <p>This component demonstrates fetching data from the server.</p>
