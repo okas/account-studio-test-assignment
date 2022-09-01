@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.JSInterop;
 using WeatherUI.Client;
-using WeatherUI.Client.ApiClients;
 using WeatherUI.Client.Helpers;
+using WeatherUI.Client.ApiClientServices;
 
 
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);

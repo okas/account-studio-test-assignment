@@ -1,7 +1,7 @@
 ﻿using System.Net.Http.Json;
 using WeatherUI.Shared;
 
-namespace WeatherUI.Client.ApiClients;
+namespace WeatherUI.Client.ApiClientServices;
 
 public class PageViewItemsHttpClientService
 {
