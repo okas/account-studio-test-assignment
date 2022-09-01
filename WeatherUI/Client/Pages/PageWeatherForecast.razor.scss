@@ -8,13 +8,17 @@
 }
 
 ::deep .drag-zone {
-    &:hover {
+    & {
         box-shadow: 1px 1px 15px 3px rgba(107, 113, 127, 0.8);
     }
 
     .draggable {
         cursor: grab;
         user-select: none;
+
+        &:hover {
+            box-shadow: inset 0px 0px 8px 2px #74F8F8;
+        }
     }
 
     .dragging {
@@ -24,15 +28,15 @@
     }
 
     .over {
-        box-shadow: inset 0px 0px 8px 2px #74f8cc;
+        box-shadow: inset 0px 0px 8px 2px #89FC8E;
     }
 
     .dragging ~ .over {
-        border-right: 4px inset red;
+        border-right: 4px inset #0C8A00;
     }
 
     .over:not(.dragging ~ .over) {
-        border-left: 4px inset red;
+        border-left: 4px inset #0C8A00;
     }
 }
 
