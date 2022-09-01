@@ -110,7 +110,7 @@
     {
         var storedHeader = await Http.GetFromJsonAsync<IEnumerable<Field>>($"api/pageviewitems/{PAGE_ID}/{HC_USERID}");
 
-        Header = storedHeader?.Any() is not null
+        Header = storedHeader is not null && storedHeader.Any()
             ? storedHeader
                 .Select(pi => pi with
                     {
@@ -120,16 +120,20 @@
             : DefaultHeader.Select(f => f with { }).ToList();
     }
 
-    protected override async Task OnInitializedAsync()
+    private async Task InitPageViewModel()
     {
-        await InitUserPageInfo();
-
         var forecasts = await Http.GetFromJsonAsync<IEnumerable<WeatherForecast>>("api/weatherforecasts");
 
         if (forecasts is not null && forecasts.Any())
         {
             viewModels = ViewModelMapper(forecasts);
         }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitUserPageInfo();
+        await InitPageViewModel();
     }
 }
 

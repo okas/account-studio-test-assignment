@@ -5,8 +5,8 @@ using WeatherUI.Shared;
 
 namespace WeatherUI.Server.Controllers;
 
-[ApiController]
 [Route("/api/[controller]")]
+[ApiController]
 public class WeatherForecastsController : ControllerBase
 {
     private readonly ApiDbContext _dbContext;
