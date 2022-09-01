@@ -1,11 +1,14 @@
 ﻿@page "/weatherforecast"
 
+
 @using System.Reflection
+@using WeatherUI.Client.ApiClients
 @using WeatherUI.Shared;
 @using WeatherUI.Client.Helpers
-@inject HttpClient Http;
-@inject IStringLocalizer<Shared.Resources.WeatherForecast> L10nWeatherForecast
 
+@inject WeatherForecastsHttpClientService WatherForecastsService
+@inject PageViewItemsHttpClientService PageViewItemService
+@inject IStringLocalizer<Shared.Resources.WeatherForecast> L10nWeatherForecast
 
 @code {
     const string PAGE_TITILE = "Weather forecast";
@@ -101,14 +104,14 @@
 
     private async Task InitUserPageInfo()
     {
-        var storedHeader = await Http.GetFromJsonAsync<IEnumerable<PageViewItem>>($"api/pageviewitems/{PAGE_ID}/{HC_USERID}");
+        var storedHeader = await PageViewItemService.GetForViewAsync(PAGE_ID, HC_USERID);
 
         Header = storedHeader?.ToList() ?? GetDefaultHeader();
     }
 
     private async Task InitPageViewModel()
     {
-        var forecasts = await Http.GetFromJsonAsync<IEnumerable<WeatherForecast>>("api/weatherforecasts");
+        var forecasts = await WatherForecastsService.GetForecastAsync();
 
         if (forecasts is not null && forecasts.Any())
         {

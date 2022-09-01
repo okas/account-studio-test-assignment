@@ -3,13 +3,23 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.JSInterop;
 using WeatherUI.Client;
+using WeatherUI.Client.ApiClients;
 using WeatherUI.Client.Helpers;
+
 
 WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
 
+Uri backendBaseUri = new(builder.HostEnvironment.BaseAddress);
+
 builder.Services
-    .AddScoped(sp => new HttpClient { BaseAddress = new(builder.HostEnvironment.BaseAddress) })
+    .AddScoped(_ => new HttpClient
+    {
+        BaseAddress = backendBaseUri
+    })
     .AddLocalization();
+
+builder.Services.AddHttpClient<WeatherForecastsHttpClientService>(client => client.BaseAddress = backendBaseUri);
+builder.Services.AddHttpClient<PageViewItemsHttpClientService>(client => client.BaseAddress = backendBaseUri);
 
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
@@ -22,10 +32,11 @@ builder.Services.PostConfigureAll<ClientConfig>(myOptions =>
         .Split(",")
         .Select(c => new CultureInfo(c)).ToList()
         ?? new List<CultureInfo>();
-    ;
 });
 
-IJSRuntime jsInterop = builder.Build().Services.GetRequiredService<IJSRuntime>();
+WebAssemblyHost host = builder.Build();
+
+IJSRuntime jsInterop = host.Services.GetRequiredService<IJSRuntime>();
 string appLanguage = await jsInterop.InvokeAsync<string>("appCulture.get");
 
 if (appLanguage != null)
@@ -35,4 +46,5 @@ if (appLanguage != null)
     CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 }
 
-await builder.Build().RunAsync();
+await host.RunAsync();
+

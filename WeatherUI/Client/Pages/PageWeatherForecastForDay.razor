@@ -1,9 +1,10 @@
 ﻿@page "/weatherforecast/{id:guid}"
 
 
+@using WeatherUI.Client.ApiClients
 @using WeatherUI.Shared
-@inject HttpClient Http
 
+@inject WeatherForecastsHttpClientService WeatherForecastsService
 
 @code {
     const string PageTitle = "Weather forecast for a day";
@@ -15,7 +16,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        forecast = await Http.GetFromJsonAsync<WeatherForecast>($"/api/weatherforecasts/{Id}");
+        forecast = await WeatherForecastsService.GetOne(Id);
     }
 }
 
