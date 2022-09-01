@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using WeatherUI.Server.DAL;
 
 #nullable disable
 
@@ -33,7 +34,7 @@ namespace WeatherUI.Server.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("WeatherForecasts");
+                    b.ToTable("WeatherForecasts", (string)null);
                 });
 #pragma warning restore 612, 618
         }
