@@ -20,4 +20,9 @@ public class PageViewItemsHttpClientService
             ?? Array.Empty<PageViewItem>();
 
     }
+
+    public async Task StorePartialChanges(IList<PageViewItemPatchDto> changes)
+    {
+        await _client.PutAsJsonAsync(_apiResx, changes);
+    }
 }

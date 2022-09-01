@@ -11,9 +11,7 @@ public class PageViewItemsController : ControllerBase
 {
     private readonly ApiDbContext _dbContext;
 
-
     public PageViewItemsController(ApiDbContext dbContext) => _dbContext = dbContext;
-
 
     [HttpGet("{pageId}/{userId}")]
     public async Task<IEnumerable<PageViewItem>> GetByUserAndView(string pageId, string userId, CancellationToken ct)
@@ -21,5 +19,30 @@ public class PageViewItemsController : ControllerBase
         return await _dbContext.PageViewItems.AsNoTracking()
             .Where(p => p.PageId == pageId && p.UserId == userId)
             .ToListAsync(ct).ConfigureAwait(false);
+    }
+
+    [HttpPut]
+    public async Task<IActionResult> UpdateControls(IEnumerable<PageViewItemPatchDto> changeSet, CancellationToken ct)
+    {
+        foreach (PageViewItemPatchDto dto in changeSet)
+        {
+            if (await _dbContext.PageViewItems.FindAsync(new object?[] { dto.Id }, cancellationToken: ct) is not PageViewItem entity)
+            {
+                return NotFound(new { message = $"Update transaction canceled, entity not found: ${dto.Id}" });
+            }
+
+            _dbContext.Entry(entity).CurrentValues.SetValues(dto);
+        }
+
+        try
+        {
+            await _dbContext.SaveChangesAsync(ct);
+        }
+        catch
+        {
+            return BadRequest();
+        }
+
+        return NoContent();
     }
 }

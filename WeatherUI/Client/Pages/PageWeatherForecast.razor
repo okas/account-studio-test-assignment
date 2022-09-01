@@ -40,15 +40,24 @@
         IsControlsVisible = !IsControlsVisible;
     }
 
+    private async Task ToggleField(ChangeEventArgs evt, PageViewItem vm)
+    {
+        vm.Selected = (bool)evt.Value!;
+
+        await StorePageControlsChanges();
+    }
+
     private void ItemMovingChange(Tuple<int, bool> change)
     {
         StartedIndex = change.Item2 ? change.Item1 : null;
     }
 
-    private void ItemDropedOn(int index)
+    private async Task ItemDropedOn(int index)
     {
         ChnageIndices(index);
         StartedIndex = null;
+
+        await StorePageControlsChanges();
     }
 
     private void ChnageIndices(int targetIndex)
@@ -67,6 +76,13 @@
         }
 
         starter.Index = targetIndex;
+    }
+
+    private async Task StorePageControlsChanges()
+    {
+        var shapedRawData = Header.Select(f => new PageViewItemPatchDto(f.Id, f.Index, f.Selected)).ToList();
+
+        await PageViewItemService.StorePartialChanges(shapedRawData);
     }
 
     private static IList<PageViewItem> GetDefaultHeader()
@@ -158,7 +174,7 @@ else
 
                 <div @key=@f.Name>
                     <label for=@elemId>@L10nWeatherForecast[f.Name]</label>
-                    <input id=@elemId type="checkbox" @bind=@f.Selected @onchange:preventDefault />
+                    <input id=@elemId type="checkbox" checked=@f.Selected @onchange=@(evt => ToggleField(evt, f)) @onchange:preventDefault />
                 </div>
             }
         </section>
