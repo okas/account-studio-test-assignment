@@ -1,27 +1,165 @@
 ﻿@page "/weatherforecast/{id:guid}"
 
 
+@using System.Reflection
 @using WeatherUI.Client.ApiClientServices
 @using WeatherUI.Shared
 
 @inject WeatherForecastsHttpClientService WeatherForecastsService
+@inject PageViewItemsHttpClientService PageViewItemService
 @inject IStringLocalizer<Resources.PageWeatherForecastForDay> L10n
 @inject IStringLocalizer<Resources.General> L10nGeneral
 @inject IStringLocalizer<Shared.Resources.WeatherForecast> L10nWeatherForecast
 
 @code {
-    const string PAGE_ID = "page-weatherforecast";
+    const string PAGE_ID = "page-weatherforecast-day";
 
     const string HC_USERID = "u1";
 
     [Parameter]
     public Guid Id { get; set; }
 
-    private WeatherForecast? Forecast { get; set; } = default;
+    private IList<PageViewItem> Header { get; set; } = Array.Empty<PageViewItem>();
+
+    private IDictionary<string, object>? ViewModel { get; set; } = default;
+
+    private int? StartedIndex { get; set; }
+
+    private bool IsControlsVisible { get; set; } = false;
+
+    private string CreateId(PageViewItem field)
+    {
+        return $"header_{@field.Name}";
+    }
+
+    private void ToggleHeaderControls()
+    {
+        IsControlsVisible = !IsControlsVisible;
+    }
+
+    private async Task ToggleField(ChangeEventArgs evt, PageViewItem vm)
+    {
+        vm.Selected = (bool)evt.Value!;
+
+        await StorePageControlsChanges();
+    }
+
+    private void ItemMovingChange(Tuple<int, bool> change)
+    {
+        StartedIndex = change.Item2 ? change.Item1 : null;
+    }
+
+    private async Task ItemDropedOn(int index)
+    {
+        ChnageIndices(index);
+        StartedIndex = null;
+
+        await StorePageControlsChanges();
+    }
+
+    private void ChnageIndices(int targetIndex)
+    {
+        PageViewItem starter = Header.Single(i => i.Index == StartedIndex);
+
+        if (StartedIndex < targetIndex)
+        {
+            Header.Where(i => i.Index > StartedIndex && i.Index <= targetIndex)
+                .ToList().ForEach(i => i.Index--);
+        }
+        else
+        {
+            Header.Where(i => i.Index < StartedIndex && i.Index >= targetIndex)
+                .ToList().ForEach(i => i.Index++);
+        }
+
+        starter.Index = targetIndex;
+    }
+
+    private async Task StorePageControlsChanges()
+    {
+        var shapedRawData = Header.Select(f => new PageViewItemPatchDto(f.Id, f.Index, f.Selected)).ToList();
+
+        if (shapedRawData.Any(f => f.Id == Guid.Empty))
+        {
+            // Should fail at API. Needs reinit from this component first.
+            return;
+        }
+
+        await PageViewItemService.StorePartialChanges(shapedRawData);
+    }
+
+    private static IList<PageViewItem> GetDefaultHeader()
+    {
+        List<PageViewItem> list = new()
+        {
+            new () { Name = nameof(WeatherForecast.Id), Selected = true },
+            new () { Name = nameof(WeatherForecast.Date), Selected = true },
+            new () { Name = nameof(WeatherForecast.TemperatureC), Selected = true },
+            new () { Name = nameof(WeatherForecast.TemperatureF), Selected = true },
+            new () { Name = nameof(WeatherForecast.Summary), Selected = true },
+        };
+
+        int idx = -1;
+
+        list.ForEach(f => { f.Index = ++idx; f.PageId = PAGE_ID; f.UserId = HC_USERID; });
+
+        return list;
+    }
+
+    private IDictionary<string, object> ViewModelMapper(WeatherForecast model)
+    {
+        PropertyInfo[] properties = typeof(WeatherForecast).GetProperties();
+
+        Func<WeatherForecast, IDictionary<string, object>> mapper = (model) => Header.Aggregate(
+            new Dictionary<string, object>(),
+            (acc, field) =>
+            {
+                PropertyInfo property = properties.Single(p => p.Name == field.Name);
+
+                acc.Add(property.Name, property.GetValue(model)!);
+
+                return acc;
+            }
+        );
+
+        return mapper(model);
+    }
+
+    private async Task InitUserPageInfo()
+    {
+        IEnumerable<PageViewItem> storedHeader = await PageViewItemService.GetForViewAsync(PAGE_ID, HC_USERID);
+
+        Header = storedHeader.Any() ? storedHeader.ToList() : GetDefaultHeader();
+
+        if (storedHeader.Any())
+        {
+            return;
+        }
+
+        // Starting from here dealing w/ initialization of Header data in API.
+        IEnumerable<PageViewItem> storedModels = await PageViewItemService.StoreInitialState(Header);
+
+        foreach (var (stored, initial) in storedModels.Zip(Header))
+        {
+            initial.Id = stored.Id;
+        }
+
+        // To Synchronize.
+        await StorePageControlsChanges();
+    }
+
+    private async Task InitPageViewModel()
+    {
+        if (await WeatherForecastsService.GetOne(Id) is WeatherForecast model)
+        {
+            ViewModel = ViewModelMapper(model);
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        Forecast = await WeatherForecastsService.GetOne(Id);
+        await InitUserPageInfo();
+        await InitPageViewModel();
     }
 }
 
@@ -40,7 +178,28 @@
     </NavLink>
 </p>
 
-@if (Forecast is null)
+<section>
+    <button @onclick=ToggleHeaderControls @onclick:preventDefault>
+        @L10nGeneral["ShowLayoutTools"]
+    </button>
+</section>
+
+@if (IsControlsVisible)
+{
+    <section class="controls">
+        @foreach (PageViewItem f in Header.Where(f => f.Name != nameof(WeatherForecast.Id)).OrderBy(f => f.Index))
+        {
+            string elemId = CreateId(f);
+
+            <div @key=@f.Name>
+                <label for=@elemId>@L10nWeatherForecast[f.Name]</label>
+                <input id=@elemId type="checkbox" checked=@f.Selected @onchange=@(evt => ToggleField(evt, f)) @onchange:preventDefault />
+            </div>
+        }
+    </section>
+}
+
+@if (ViewModel is null)
 {
     <p>
         <em>@L10nGeneral["Loading"]...</em>
@@ -48,35 +207,36 @@
 }
 else
 {
-    <dl>
-        <dt>
-            @L10nWeatherForecast[nameof(WeatherForecast.Date)]
-        </dt>
-        <dd>
-            @Forecast?.Date.ToShortDateString()
-        </dd>
+    <DragZone Data=@Header.Where(f => f.Selected && f.Name != nameof(WeatherForecast.Id)).OrderBy(f => f.Index)>
 
-        <dt>
-            @L10nWeatherForecast[nameof(WeatherForecast.TemperatureC)]
-        </dt>
-        <dd>
-            @Forecast?.TemperatureC
-        </dd>
+        <ListTemplate Context="header">
+            <dl class="drag-zone">
+                @header
+            </dl>
+        </ListTemplate>
 
-        <dt>
-            @L10nWeatherForecast[nameof(WeatherForecast.TemperatureF)]
-        </dt>
-        <dd>
-            @Forecast?.TemperatureF
-        </dd>
+        <ItemTemplate Context="field">
 
-        <dt>
-            @L10nWeatherForecast[nameof(WeatherForecast.Summary)]
-        </dt>
-        <dd>
-            @Forecast?.Summary
-        </dd>
-    </dl>
+            <DragItem Active=@true
+                  Index=@field.Index
+                  OnDroppedToOther=@ItemDropedOn
+                  OnMovingChanged=@ItemMovingChange>
+                <dt>
+                    @L10nWeatherForecast[field.Name]
+                </dt>
+                <dd>
+                    @if (field.Name == nameof(WeatherForecast.Date))
+                    {
+                        @Convert.ToDateTime(ViewModel[field.Name]).ToShortDateString()
+                    }
+                    else
+                    {
+                        @ViewModel[field.Name]
+                    }
+                </dd>
+            </DragItem>
+
+        </ItemTemplate>
+
+    </DragZone>
 }
-
-

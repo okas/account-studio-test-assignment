@@ -25,4 +25,11 @@ public class PageViewItemsHttpClientService
     {
         await _client.PutAsJsonAsync(_apiResx, changes);
     }
+
+    public async Task<IEnumerable<PageViewItem>> StoreInitialState(IEnumerable<PageViewItem> models)
+    {
+        HttpResponseMessage response = await _client.PostAsJsonAsync(_apiResx, models);
+
+        return await response.Content.ReadFromJsonAsync<IEnumerable<PageViewItem>>();
+    }
 }

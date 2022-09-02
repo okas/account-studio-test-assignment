@@ -21,6 +21,17 @@ public class PageViewItemsController : ControllerBase
             .ToListAsync(ct).ConfigureAwait(false);
     }
 
+    [HttpPost]
+    public async Task<ActionResult<IEnumerable<PageViewItem>>> CreateControlsState(IEnumerable<PageViewItem> newModels, CancellationToken ct)
+    {
+        await _dbContext.PageViewItems.AddRangeAsync(newModels, ct);
+
+        await _dbContext.SaveChangesAsync(ct);
+
+        return Ok(newModels);
+
+    }
+
     [HttpPut]
     public async Task<IActionResult> UpdateControls(IEnumerable<PageViewItemPatchDto> changeSet, CancellationToken ct)
     {
